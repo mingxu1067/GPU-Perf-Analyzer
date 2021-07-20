@@ -22,7 +22,8 @@ class StatisticClassifier(object):
         for i in range(start_idx, len(kernels)):
             kernel_name = kernels[i][name_idx]
             class_name = self._get_class(kernel_name.lower())
-            statistic_table[class_name][0] += float(kernels[i][total_time_idx]) / iter_times / 1000000.0 # convert from ns to ms.
+            statistic_table[class_name][0] += (float(kernels[i][total_time_idx]) / int(kernels[i][instance_idx])) * \
+                                              (int(kernels[i][instance_idx]) // iter_times) / 1000000.0 # convert from ns to ms.
             statistic_table[class_name][1] += int(kernels[i][instance_idx]) / iter_times
 
         total_time_of_one_iter = 0.0

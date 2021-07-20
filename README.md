@@ -69,16 +69,18 @@ dropout              5.41         146        3.52
 softmax              3.11          48        2.02
 optimizer            8.28         398        5.38
 
+
+
 ===== PaddleNLP_BERT-large_Bat32_dynamic =====
-Time of a iteration: 158.478 (ms)
+Time of a iteration: 157.332 (ms)
 Instance of a iteration: 3131
 
 Class            Time (ms)   Instance    Time (%)
-others              18.61         862       11.74
-gemm                93.61         588       59.07
-elementwise         21.63         889       13.65
-layernorm            6.98         200        4.40
-dropout              5.64         146        3.56
-softmax              3.16          48        2.00
-optimizer            8.84         398        5.58
+others              18.61         862       11.83
+gemm                92.47         588       58.77
+elementwise         21.63         889       13.75
+layernorm            6.98         200        4.44
+dropout              5.64         146        3.58
+softmax              3.16          48        2.01
+optimizer            8.84         398        5.62
 ```
