@@ -1,4 +1,4 @@
-import csv
+import csv, re
 
 class StatisticClassifier(object):
     OTHER_CLASS_NAME = "others"
@@ -9,7 +9,7 @@ class StatisticClassifier(object):
         self._check_conflict(list(self._name_to_class_map.keys()))
 
     def statistic(self, kernels, iter_times, with_header=True,
-                  total_time_idx=1, instance_idx=2, name_idx=7):
+                  total_time_idx=1, instance_idx=2, name_idx=7, checking_fp16=True):
 
         statistic_table = {StatisticClassifier.OTHER_CLASS_NAME:[0.0, 0, 0.0, 0]}
         for key in self.name_to_class_map:
@@ -19,6 +19,7 @@ class StatisticClassifier(object):
         if with_header :
             header = kernels[0]
             start_idx = 1
+        enable_fp16 = False
         for i in range(start_idx, len(kernels)):
             kernel_name = kernels[i][name_idx]
             class_name = self._get_class(kernel_name.lower())
@@ -27,7 +28,11 @@ class StatisticClassifier(object):
             statistic_table[class_name][1] += int(kernels[i][instance_idx]) // iter_times
             statistic_table[class_name][2] += float(kernels[i][total_time_idx]) / 1000000.0 # convert from ns to ms.
             statistic_table[class_name][3] += int(kernels[i][instance_idx])
+            if self.check_FP16_enabling(kernel_name):
+                enable_fp16 = True
 
+        if checking_fp16 and not enable_fp16:
+            print("!! WARNING: all kernel names do not contain FP16 related pattern. !!")
 
         total_time_of_one_iter = 0.0
         total_kernels_of_one_iter = 0
@@ -64,6 +69,12 @@ class StatisticClassifier(object):
                    'Class name should not be \"other\"'
             result_dict[key.lower()] = map[key].lower()
         return result_dict
+
+    def check_FP16_enabling(self, txt):
+        pattern = "_fp16|float16|h[0-9]*gemm|half"
+        return re.search(pattern, txt) is not None
+
+
 
     @property
     def name_to_class_map(self):
