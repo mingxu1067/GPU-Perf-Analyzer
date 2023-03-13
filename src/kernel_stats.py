@@ -8,7 +8,7 @@ class StatisticClassifier(object):
         self._name_to_class_map = self._convert_to_lower(name_to_class_map)
         self._check_conflict(list(self._name_to_class_map.keys()))
 
-    def statistic(self, kernels, iter_times, with_header=True,
+    def statistic(self, kernels, iter_times, num_processes=1, with_header=True,
                   total_time_idx=1, instance_idx=2, name_idx=7, checking_fp16=True):
 
         statistic_table = {StatisticClassifier.OTHER_CLASS_NAME:[0.0, 0, 0.0, 0]}
@@ -23,9 +23,8 @@ class StatisticClassifier(object):
         for i in range(start_idx, len(kernels)):
             kernel_name = kernels[i][name_idx]
             class_name = self._get_class(kernel_name.lower())
-            statistic_table[class_name][0] += (float(kernels[i][total_time_idx]) / int(kernels[i][instance_idx])) * \
-                                              (int(kernels[i][instance_idx]) // iter_times) / 1000000.0 # convert from ns to ms.
-            statistic_table[class_name][1] += int(kernels[i][instance_idx]) // iter_times
+            statistic_table[class_name][0] += (float(kernels[i][total_time_idx]) / (iter_times*num_processes)) / 1000000.0 # convert from ns to ms.
+            statistic_table[class_name][1] += int(kernels[i][instance_idx]) // (iter_times*num_processes)
             statistic_table[class_name][2] += float(kernels[i][total_time_idx]) / 1000000.0 # convert from ns to ms.
             statistic_table[class_name][3] += int(kernels[i][instance_idx])
             if self.check_FP16_enabling(kernel_name):
