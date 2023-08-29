@@ -29,8 +29,8 @@ class StatisticReport:
 
         assert self.kernel_statistic_table is not None
 
-        print("Kernel time of a iteration: {:.3f} (ms)".format(self.kernel_total_time_per_iter))
-        print("Kernel instances of a iteration: {}".format(self.kernel_total_instancess_per_iter))
+        print("Kernel time per iteration: {:.3f} (ms)".format(self.kernel_total_time_per_iter))
+        print("Kernel instances per iteration: {}".format(self.kernel_total_instancess_per_iter))
         print("Kernel total time: {:.3f} (ms)".format(self.kernel_total_time))
         print("Kernel total instances: {}".format(self.kernel_total_instances))
         print("Kernel Statistic:")
@@ -44,8 +44,8 @@ class StatisticReport:
                     self.kernel_statistic_table[key][2], self.kernel_statistic_table[key][3],
                     (self.kernel_statistic_table[key][2]/self.kernel_total_time)*100))
         print("")
-        print("NCCL time of a iteration: {:.3f} (ms)".format(self.nccl_total_time_per_iter))
-        print("NCCL instances of a iteration: {}".format(self.nccl_total_kernels_per_iter))
+        print("NCCL time per iteration: {:.3f} (ms)".format(self.nccl_total_time_per_iter))
+        print("NCCL instances per iteration: {}".format(self.nccl_total_kernels_per_iter))
         print("NCCL total time: {:.3f} (ms)".format(self.nccl_total_time))
         print("NCCL total instances: {}".format(self.nccl_total_kernels))
         print("NCCL Statistic:")
