@@ -3,7 +3,7 @@ A tool to summarize GPU kernel execution from Nsight-systems reports, which in C
 
 ## How to get CSV reports from Qdrep records.
 We could convert `qdrep` files to their own CSV statistics report by `nsys`.</br>
-`nsys stats --format csv -o your_csv_file_name your_nsys_report.qdrep`
+`nsys stats -r cuda_gpu_kern_sum,nvtx_gpu_proj_trace --format csv -o your_csv_file_name your_nsys_report.qdrep`
 
 ## Usage
 1. Setup kernel names and its class mapping </br>
@@ -13,79 +13,85 @@ We could convert `qdrep` files to their own CSV statistics report by `nsys`.</br
     1.4 Lastly, all strings would be cast to lower case for further matching.
 ```python
 sc = StatisticClassifier({
-        "GEMM":"Gemm",
-        "Elemwise":"elementwise",
-        "Elementwise":"elementwise",
-        "TensorCWise":"elementwise",
-        "VectorizedKernel":"elementwise",
-        "layernorm":"layernorm",
-        "VectorizedRandom":"dropout",
-        "Dropout":"dropout",
+        "gemm_e4m3":"FP8_Gemm",
+        "gemm_e5m2":"FP8_Gemm",
+        "gemm_bf16bf16_bf16f32_f32":"Other_Gemm",
+        "xmma_gemm_f32f32":"Other_Gemm",
+        "s16816gemm":"Other_Gemm",
+        "s161616gemm_bf16":"Other_Gemm",
+        "ln_":"LayerNorm",
+        "softmax":"Softmax",
+        "gelu":"Gelu",
+        "fusion":"fusion",
+        "convert":"convert",
+        "cast_transpose":"cast_transpose",
+        "transpose_optimized_kernel":"cast_transpose",
+        "transpose_kernel":"cast_transpose",
         "softmax":"softmax",
-        "Adam":"optimizer"
+        "_fmha_": "fmha",
+        "reduce": "reduce"
     })
 ```
 2. Call `statistic` with profiled iterations.
 ```python
-# We profiled our GPU program for total 10 iterations, so we have to let statisticer know this information.
-class_statistic, total_time, total_instance = sc.statistic(kernel_info_table, iter_times=10)
+# We profiled our GPU program for total 5 iterations, so we have to let statisticer know this information.
+report = sc.statistic(5, cuda_kernel_sum_table, nvtx_gpu_proj_table, cuda_mem_sum_table,
+                      num_processes=1, nvtx_iter_name="Train_step")
 ```
 3. Show summarized results
 ```python
-show("PaddleNLP_BERT-large_Bat32_static", class_statistic, total_time, total_instance)
-'''
-===== PaddleNLP_BERT-large_Bat32_static =====
-Time of a iteration: 91.442 (ms)
-Instance of a iteration: 2372
-Total Time: 916.000
-Total Instance: 23746
-
-Class            Time (ms)   Instance    Time (%)    TotalTime (ms)   TotalInstance  TotalTime (%)
-others              15.81         407      17.29            158.97             4085          17.34
-gemm                42.79         587      46.79            429.36             5880          46.83
-elementwise         14.28         586      15.62            142.84             5861          15.58
-layernorm            4.77         200       5.21             47.66             2000           5.20
-dropout              3.17         146       3.47             31.71             1460           3.46
-softmax              1.83          48       2.00             18.28              480           1.99
-optimizer            8.80         398       9.62             88.00             3980           9.60
-'''
+report.show("Paxml/GPT5B/FP8/Repeat/4FSDP_2TP")
 ```
 
 # Example
-We use [PaddleNLP BERT-large pretraining](https://github.com/PaddlePaddle/PaddleNLP) as examples.</br>
 ```bash
 $> git clone https://github.com/mingxu1067/GPU_kernel_info_statistic.git
-$> cd GPU_kernel_info_statistic/src
-$> python kernel_stats.py
+$> cd GPU_kernel_info_statistic
+$> python src/kernel_stats.py
 
-===== PaddleNLP_BERT-large_Bat32_static =====
-Time of a iteration: 91.442 (ms)
-Instance of a iteration: 2372
-Total Time: 916.000
-Total Instance: 23746
+===== Paxml/GPT5B/FP8/R/142 =====
+Kernel time of a iteration: 307.620 (ms)
+Kernel instances of a iteration: 3355
+Kernel total time: 1538.100 (ms)
+Kernel total instances: 16775
+Kernel Statistic:
+Class            TimePerIter(ms)  InstancePerIter  TimePerIter(%)   TotalTime(ms)    TotalInstance  TotalTime(%)   
+others                      1.30               84            0.42            6.52              420          0.42
+fp8_gemm                  109.21              360           35.50          546.04             1800         35.50
+other_gemm                 27.49              199            8.94          137.45              995          8.94
+layernorm                  11.11              192            3.61           55.53              960          3.61
+softmax                     7.91               72            2.57           39.57              360          2.57
+gelu                        0.00                0            0.00            0.00                0          0.00
+fusion                    125.56             1899           40.82          627.82             9495         40.82
+convert                     0.62               55            0.20            3.09              275          0.20
+cast_transpose             24.26              432            7.89          121.30             2160          7.89
+fmha                        0.00                0            0.00            0.00                0          0.00
+reduce                      0.16               62            0.05            0.78              310          0.05
 
-Class            Time (ms)   Instance    Time (%)    TotalTime (ms)   TotalInstance  TotalTime (%)
-others              15.81         407      17.29            158.97             4085          17.34
-gemm                42.79         587      46.79            429.36             5880          46.83
-elementwise         14.28         586      15.62            142.84             5861          15.58
-layernorm            4.77         200       5.21             47.66             2000           5.20
-dropout              3.17         146       3.47             31.71             1460           3.46
-softmax              1.83          48       2.00             18.28              480           1.99
-optimizer            8.80         398       9.62             88.00             3980           9.60
+NCCL time of a iteration: 117.652 (ms)
+NCCL instances of a iteration: 533
+NCCL total time: 588.258 (ms)
+NCCL total instances: 2665
+NCCL Statistic:
+Class            TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance  
+AllGather                  63.38              248         316.90             1240
+ReduceScatter              35.34              172         176.70              860
+AllReduce                  18.40              111          92.00              555
+SendRecv                    0.53                2           2.66               10
 
-===== PaddleNLP_BERT-large_Bat32_dynamic =====
-Time of a iteration: 121.296 (ms)
-Instance of a iteration: 4021
-Total Time: 1215.000
-Total Instance: 40220
+Mem Ops Statistic:
+Class                  TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance  
+[CUDA memcpy DtoD]               42.11              163         210.56              815
+[CUDA memset]                     0.69              530           3.45             2650
+[CUDA memcpy DtoH]                0.12               53           0.60              265
+[CUDA memcpy HtoD]                0.01               10           0.06               50
 
-Class            Time (ms)   Instance    Time (%)    TotalTime (ms)   TotalInstance  TotalTime (%)
-others              17.86         764      14.72            178.58             7640          14.69
-gemm                42.75         587      35.24            429.92             5880          35.37
-elementwise         19.88         988      16.39            198.78             9880          16.35
-layernorm            4.60         200       3.79             45.96             2000           3.78
-dropout              4.13         146       3.40             41.29             1460           3.40
-softmax              1.94          48       1.60             19.43              480           1.60
-optimizer            8.61         398       7.10             86.10             3980           7.08
-cast                21.54         890      17.75            215.35             8900          17.72
+NVTX range count: 5
+NVTX average range time: 404.640 (ms)
+NVTX total range time: 2023.200 (ms)
+
+Estimated non-hidden NCCL, mem ops and bubble time per range: 97.020 (ms)
+Estimated non-hidden NCCL, mem ops and bubble time per range: 23.98 (%)
+Estimated non-hidden NCCL, mem ops and bubble time: 485.099 (ms)
+Estimated non-hidden NCCL, mem ops and bubble time: 23.98 (%)
 ```
