@@ -50,8 +50,8 @@ $> cd GPU_kernel_info_statistic
 $> python src/kernel_stats.py
 
 ===== Paxml/GPT5B/FP8/R/142 =====
-Kernel time of a iteration: 307.620 (ms)
-Kernel instances of a iteration: 3355
+Kernel time per iteration: 307.620 (ms)
+Kernel instances per iteration: 3355
 Kernel total time: 1538.100 (ms)
 Kernel total instances: 16775
 Kernel Statistic:
@@ -68,8 +68,8 @@ cast_transpose             24.26              432            7.89          121.3
 fmha                        0.00                0            0.00            0.00                0          0.00
 reduce                      0.16               62            0.05            0.78              310          0.05
 
-NCCL time of a iteration: 117.652 (ms)
-NCCL instances of a iteration: 533
+NCCL time per iteration: 117.652 (ms)
+NCCL instances per iteration: 533
 NCCL total time: 588.258 (ms)
 NCCL total instances: 2665
 NCCL Statistic:
