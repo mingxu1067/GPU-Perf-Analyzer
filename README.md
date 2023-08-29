@@ -2,8 +2,8 @@
 A tool to summarize GPU kernel execution from Nsight-systems reports, which in CSV .
 
 ## How to get CSV reports from Qdrep records.
-We could convert `qdrep` files to their own CSV statistics report by `nsys`.</br>
-`nsys stats -r cuda_gpu_kern_sum,nvtx_gpu_proj_trace --format csv -o your_csv_file_name your_nsys_report.qdrep`
+We could convert `nsys-rep` files to their own CSV statistics report by `nsys`.</br>
+`nsys stats -r cuda_gpu_kern_sum,nvtx_gpu_proj_trace --format csv -o your_csv_file_name your_nsys_report.nsys-rep`
 
 ## Usage
 1. Setup kernel names and its class mapping </br>
