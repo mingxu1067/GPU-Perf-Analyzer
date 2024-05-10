@@ -1,0 +1,47 @@
+{
+    "input_format": "csv",
+    "nsys_report": {
+        "path": null,
+        "with_nvtx": false,
+        "with_mem": false
+    },
+    "nsys_csv_file_path": {
+        "kernel_sum":"example/demo_cuda_gpu_kern_sum.csv",
+        "nvtx_proj_trace":"example/demo_nvtx_gpu_proj_trace.csv",
+        "mem_time_sum": "example/demo_cuda_gpu_mem_time_sum.csv"
+    },
+    "kernel_to_class_map": {
+        "gemm_e4m3":"FP8_Gemm",
+        "gemm_e5m2":"FP8_Gemm",
+        "gemm_bf16bf16_bf16f32_f32":"Other_Gemm",
+        "xmma_gemm_f32f32":"Other_Gemm",
+        "s16816gemm":"Other_Gemm",
+        "s161616gemm_bf16":"Other_Gemm",
+        "ln_":"LayerNorm",
+        "gelu":"Gelu",
+        "fusion":"fusion",
+        "convert":"convert",
+        "cast_transpose":"cast_transpose",
+        "transpose_optimized_kernel":"cast_transpose",
+        "transpose_kernel":"cast_transpose",
+        "softmax":"softmax",
+        "_fmha_": "fmha",
+        "reduce": "reduce"
+    },
+    "title": "Paxml/GPT5B/FP8/Repeat/4FSDP_2TP",
+    "analysis_args": {
+        "num_of_iters": 5,
+        "num_of_gpus": 1,
+        "with_header": true,
+        "time_scale_to_ms": 1e-6,
+        "kernel_total_time_idx": 1,
+        "kernel_instance_idx": 2,
+        "kernel_name_idx": 8,
+        "nvtx_tag_of_iter": "Train_step",
+        "nvtx_tag_idx": 0,
+        "nvtx_proj_duration_idx": 2,
+        "mem_name_idx": 8,
+        "mem_time_idx": 1,
+        "mem_count_idx": 2
+    }
+}

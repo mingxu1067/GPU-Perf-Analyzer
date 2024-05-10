@@ -1,53 +1,69 @@
-# GPU Kernel Execution Information Statistics
-A tool to summarize GPU kernel execution from Nsight-systems reports, which in CSV .
-
-## How to get CSV reports from Qdrep records.
-We could convert `nsys-rep` files to their own CSV statistics report by `nsys`.</br>
-`nsys stats -r cuda_gpu_kern_sum,nvtx_gpu_proj_trace --format csv -o your_csv_file_name your_nsys_report.nsys-rep`
+# GPU Performace Analyser
+GPU Performance Analyzer is a tool that summarizes GPU kernel execution information from Nsight Systems reports. It reads these reports and extracts key metrics such as GPU kernel execution time, memory operation time, and NVTX projection. By aggregating this information, the tool helps users assess the performance and efficiency of their GPU programs. It provides users with an easier way to understand and analyze the performance of their GPU programs during execution.
 
 ## Usage
-1. Setup kernel names and its class mapping </br>
-    1.1 Here we would like to classify our GPU kernels to 6 classes, Gemm, Elementwise, LayerNorm, Dropout, Softmax and Optimizer, which are the values of given Dictionary to StatisticClassifier.</br>
-    1.2 We let Kernel names which contains `GEMM`, `Gemm` and so on (whatever upper or lower case) map to `Gemm` class. For example, `ampere_sgemm_128x32_tn` would be count as a member in `Gemm`.</br>
-    1.3 The keys cannot be a substring of each other. For instance, `ForRangeElemwise:elementwise, Elemwise:elementwise` is not allowed, since `Elemwise` is a substring of `ForRangeElemwise`. </br>
-    1.4 Lastly, all strings would be cast to lower case for further matching.
-```python
-sc = StatisticClassifier({
-        "gemm_e4m3":"FP8_Gemm",
-        "gemm_e5m2":"FP8_Gemm",
-        "gemm_bf16bf16_bf16f32_f32":"Other_Gemm",
-        "xmma_gemm_f32f32":"Other_Gemm",
-        "s16816gemm":"Other_Gemm",
-        "s161616gemm_bf16":"Other_Gemm",
-        "ln_":"LayerNorm",
-        "softmax":"Softmax",
-        "gelu":"Gelu",
-        "fusion":"fusion",
-        "convert":"convert",
-        "cast_transpose":"cast_transpose",
-        "transpose_optimized_kernel":"cast_transpose",
-        "transpose_kernel":"cast_transpose",
-        "softmax":"softmax",
-        "_fmha_": "fmha",
-        "reduce": "reduce"
-    })
+
+This tool is JSON config based and supports formats of nsys reports and pre-generated `csv` files from nsys reports.
+
+### Generate csv files from nsys-rep
+```bash
+nsys stats -r cuda_gpu_kern_sum,nvtx_gpu_proj_trace,cuda_gpu_mem_time_sum --format csv -o your_csv_file_name_prefix your_nsys_report.nsys-rep
 ```
-2. Call `statistic` with profiled iterations.
-```python
-# We profiled our GPU program for total 5 iterations, so we have to let statisticer know this information.
-report = sc.statistic(5, cuda_kernel_sum_table, nvtx_gpu_proj_table, cuda_mem_sum_table,
-                      num_processes=1, nvtx_iter_name="Train_step")
+
+### command to run
+```bash
+python3 src/main.py --config=your_config_path
 ```
-3. Show summarized results
-```python
-report.show("Paxml/GPT5B/FP8/Repeat/4FSDP_2TP")
+
+### JSON config
+```json
+{
+    "input_format": "csv", // The format of input files, should be ["csv", "nsys-rep"]
+    "nsys_report": { // Information for analyzing nsys-rep, is only used when input_format="nsys-rep"
+        "path": null, // The file path of nsys-rep.
+        "with_nvtx": false, // Indicates whether to analyze NVTX projection or not.
+        "with_mem": false  // Indicates whether to analyze memory operation or not.
+    },
+    "nsys_csv_file_path": { // Information for analyzing nsys-rep, is only used when input_format="csv"
+        "kernel_sum":"example/demo_cuda_gpu_kern_sum.csv", // The file path of pre-generated cuda_gpu_kern_sum.csv from a nsys-rep. Must be provided.
+        "nvtx_proj_trace":"example/demo_nvtx_gpu_proj_trace.csv", // The file path of pre-generated nvtx_gpu_proj_trace.csv from a nsys-rep. Optional, could be null.
+        "mem_time_sum": "example/demo_cuda_gpu_mem_time_sum.csv" // The file path of pre-generated cuda_gpu_mem_time_sum.csv from a nsys-rep. Optional, could be null.
+    },
+    "kernel_to_class_map": { // A map indicating how to classify GPU kernels. Refer to the Kernel2Class Map section for details.
+        "part_of_kernel_name": "corresponding_class"
+    },
+    "title": "Paxml/GPT5B/FP8/Repeat/4FSDP_2TP", // The title of this analysis
+    "analysis_args": { 
+        "num_of_iters": 5, // Indicates how many repeat runs/interations are contained in input nsys-rep/csv files.
+        "num_of_gpus": 1, // Indicates how many GPUs are contained in input nsys-rep/csv files.
+        "nvtx_tag_of_iter": "Train_step", // Indicates the NVTX tag of the run/iteration. Must be provided when NVTX analysis is enabled.
+    } 
+}
 ```
+
+### Kernel2Class Map
+The Kernel2Class Map indicates how to classify GPU kernels into their corresponding classes. The key is a partial kernel name, and the value is its corresponding class. This means that all kernels containing the key will be classified into the value class. </br>
+
+For example, consider the following map: </br>
+```json
+{
+    "gemm":"gemm",
+    "fusion":"fusion",
+    "cast_transpose":"cast_transpose",
+    "transpose_optimized_kernel":"cast_transpose",
+    "transpose_kernel":"cast_transpose",
+}
+```
+This map indicates that kernels with names containing `gemm` should be classified into the `gemm` class, such as `xmma_gemm_f32f32`, `s16816gemm`, or `s161616gemm_bf16`. Similarly, kernels with names containing `cast_transpose`, `transpose_optimized_kernel`, or `transpose_kernel` should be classified into the `cast_transpose` class. </br>
+
+Notes: </br>
+1. Kernels whose names do not contain any one of keys in this map will be classified into the `others` class. </br>
+2. All NCCL kernels will be automatically classified into the `nccl` class in the backend. </br>
+
 
 # Example
 ```bash
-$> git clone https://github.com/mingxu1067/GPU_kernel_info_statistic.git
-$> cd GPU_kernel_info_statistic
-$> python src/kernel_stats.py
+$> python3 analyzer/main.py --config='example/config.json'
 
 ===== Paxml/GPT5B/FP8/R/142 =====
 Kernel time per iteration: 307.620 (ms)
