@@ -54,13 +54,21 @@ class Report:
                     self.nccl_statistic_table[key][2], int(self.nccl_statistic_table[key][3])))
 
         if self.mem_statistic_table is not None:
+            name_map = {
+                "[CUDA memcpy Device-to-Device]": "[CUDA memcpy D2D]",
+                "[CUDA memcpy Device-to-Host]": "[CUDA memcpy D2H]",
+                "[CUDA memcpy Host-to-Device]": "[CUDA memcpy H2D]",
+                "[CUDA memcpy Host-to-Host]": "[CUDA memcpy H2H]",
+            }
+
             print("")
             print("Mem Ops Statistic:")
             print("{:23}{:17}{:17}{:17}{:15}".format("Class",
                 "TimePerIter(ms)", "InstancePerIter", "TotalTime(ms)", "TotalInstance"))
             for key in self.mem_statistic_table:
+                display_key = name_map.get(key, key)
                 print("{:23}{:15.2f}{:17}{:15.2f}{:17}".format(
-                    key, self.mem_statistic_table[key][0], self.mem_statistic_table[key][1],
+                    display_key, self.mem_statistic_table[key][0], self.mem_statistic_table[key][1],
                     self.mem_statistic_table[key][2], self.mem_statistic_table[key][3]))
 
         print("")
@@ -73,9 +81,9 @@ class Report:
                 (self.nvtx_avg_range_time - self.kernel_total_time_per_iter)))
             print("Estimated non-hidden NCCL, mem ops and bubble time per range: {:.2f} (%)".format(
                 (self.nvtx_avg_range_time - self.kernel_total_time_per_iter) / self.nvtx_avg_range_time * 100))
-            print("Estimated non-hidden NCCL, mem ops and bubble time: {:.3f} (ms)".format(
+            print("Estimated non-hidden NCCL, mem ops and bubble total time: {:.3f} (ms)".format(
                 (self.nvtx_total_range_time - self.kernel_total_time)))
-            print("Estimated non-hidden NCCL, mem ops and bubble time: {:.2f} (%)".format(
+            print("Estimated non-hidden NCCL, mem ops and bubble total time: {:.2f} (%)".format(
                 (self.nvtx_total_range_time - self.kernel_total_time) / self.nvtx_total_range_time * 100))
 
 

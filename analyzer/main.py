@@ -75,7 +75,7 @@ def csv_reader(config):
     return kernel_sum_table, nvtx_proj_trace_table, mem_time_sum_table
 
 def read_statistic_tables(config):
-    format = config["input_format"].lower()
+    format = config["format"].lower()
 
     if format == FORMAT_CSV:
         return csv_reader(config["nsys_csv_file_path"])
@@ -90,18 +90,23 @@ def read_statistic_tables(config):
 def main(args):
 
     config = json.loads(open(args.config).read())
-    kernel_sum_table, nvtx_proj_trace_table, mem_time_sum_table = \
-        read_statistic_tables(config)
 
     analyer = Analyzer(
         config["kernel_to_class_map"]
     )
-    report = analyer.analyze(
-        kernels=kernel_sum_table,
-        nvtxes=nvtx_proj_trace_table,
-        mems=mem_time_sum_table,
-        **config["analysis_args"])
-    report.show()
+
+    for input_config in config["inputs"]:
+        kernel_sum_table, nvtx_proj_trace_table, mem_time_sum_table = \
+            read_statistic_tables(input_config)
+
+        report = analyer.analyze(
+            kernels=kernel_sum_table,
+            nvtxes=nvtx_proj_trace_table,
+            mems=mem_time_sum_table,
+            **input_config["analysis_args"])
+    
+        report.show(input_config["title"])
+        print("\n")
 
 if __name__ == "__main__":
     args = parse_args()

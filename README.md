@@ -18,26 +18,39 @@ python3 src/main.py --config=your_config_path
 ### JSON config
 ```json
 {
-    "input_format": "csv", // The format of input files, should be ["csv", "nsys-rep"]
-    "nsys_report": { // Information for analyzing nsys-rep, is only used when input_format="nsys-rep"
-        "path": null, // The file path of nsys-rep.
-        "with_nvtx": false, // Indicates whether to analyze NVTX projection or not.
-        "with_mem": false  // Indicates whether to analyze memory operation or not.
-    },
-    "nsys_csv_file_path": { // Information for analyzing nsys-rep, is only used when input_format="csv"
-        "kernel_sum":"example/demo_cuda_gpu_kern_sum.csv", // The file path of pre-generated cuda_gpu_kern_sum.csv from a nsys-rep. Must be provided.
-        "nvtx_proj_trace":"example/demo_nvtx_gpu_proj_trace.csv", // The file path of pre-generated nvtx_gpu_proj_trace.csv from a nsys-rep. Optional, could be null.
-        "mem_time_sum": "example/demo_cuda_gpu_mem_time_sum.csv" // The file path of pre-generated cuda_gpu_mem_time_sum.csv from a nsys-rep. Optional, could be null.
-    },
+    "inputs": [ // A list of inputs' information which shared the same "kernel_to_class_map".
+        {
+            "format": "csv", // The format of input files, should be ["csv", "nsys-rep"]
+            "title": "Llama2-70B-From-CSV", // The title of this analysis
+            "nsys_csv_file_path": { // Information for analyzing nsys-rep, is only used when input_format="csv"
+                "kernel_sum":"example/llama2-70B-GBS512-FSDP256_cuda_gpu_kern_sum.csv", // The file path of pre-generated cuda_gpu_kern_sum.csv from a nsys-rep. Must be provided.
+                "nvtx_proj_trace":"example/llama2-70B-GBS512-FSDP256_nvtx_gpu_proj_trace.csv", // The file path of pre-generated nvtx_gpu_proj_trace.csv from a nsys-rep. Optional, could be null.
+                "mem_time_sum": "example/llama2-70B-GBS512-FSDP256_cuda_gpu_mem_time_sum.csv" // The file path of pre-generated cuda_gpu_mem_time_sum.csv from a nsys-rep. Optional, could be null.
+            },
+            "analysis_args": { 
+                "num_of_iters": 5, // Indicates how many repeat runs/interations are contained in input nsys-rep/csv files.
+                "num_of_gpus": 1, // Indicates how many GPUs are contained in input nsys-rep/csv files.
+                "nvtx_tag_of_iter": "TSL:XlaModule:#hlo_module=pjit__train_step,program_id=11#", // Indicates the NVTX tag of the run/iteration. Must be provided when NVTX analysis is enabled.
+            } 
+        },
+        {
+            "format": "nsys-rep", // The format of input files, should be ["csv", "nsys-rep"]
+            "nsys_report": { // Information for analyzing nsys-rep, is only used when input_format="nsys-rep"
+                "path": "example/llama2-70B-GBS512-FSDP256.nsys-rep", // The file path of nsys-rep.
+                "with_nvtx": true, // Indicates whether to analyze NVTX projection or not.
+                "with_mem": true // Indicates whether to analyze memory operation or not.
+            },
+            "title": "Llama2-70B-From-NSYS-REP", // The title of this analysis
+            "analysis_args": { 
+                "num_of_iters": 5, // Indicates how many repeat runs/interations are contained in input nsys-rep/csv files.
+                "num_of_gpus": 1, // Indicates how many GPUs are contained in input nsys-rep/csv files.
+                "nvtx_tag_of_iter": "TSL:XlaModule:#hlo_module=pjit__train_step,program_id=11#", // Indicates the NVTX tag of the run/iteration. Must be provided when NVTX analysis is enabled.
+            } 
+        }
+    ],
     "kernel_to_class_map": { // A map indicating how to classify GPU kernels. Refer to the Kernel2Class Map section for details.
         "part_of_kernel_name": "corresponding_class"
     },
-    "title": "Paxml/GPT5B/FP8/Repeat/4FSDP_2TP", // The title of this analysis
-    "analysis_args": { 
-        "num_of_iters": 5, // Indicates how many repeat runs/interations are contained in input nsys-rep/csv files.
-        "num_of_gpus": 1, // Indicates how many GPUs are contained in input nsys-rep/csv files.
-        "nvtx_tag_of_iter": "Train_step", // Indicates the NVTX tag of the run/iteration. Must be provided when NVTX analysis is enabled.
-    } 
 }
 ```
 
@@ -61,53 +74,82 @@ Notes: </br>
 2. All NCCL kernels will be automatically classified into the `nccl` class in the backend. </br>
 
 
-# Example
+## Example
 ```bash
 $> python3 analyzer/main.py --config='example/config.json'
 
-===== Paxml/GPT5B/FP8/R/142 =====
-Kernel time per iteration: 307.620 (ms)
-Kernel instances per iteration: 3355
-Kernel total time: 1538.100 (ms)
-Kernel total instances: 16775
+===== Llama2-70B-From-CSV =====
+Kernel time per iteration: 7947.172 (ms)
+Kernel instances per iteration: 7877
+Kernel total time: 39735.860 (ms)
+Kernel total instances: 39385
 Kernel Statistic:
-Class            TimePerIter(ms)  InstancePerIter  TimePerIter(%)   TotalTime(ms)    TotalInstance  TotalTime(%)   
-others                      1.30               84            0.42            6.52              420          0.42
-fp8_gemm                  109.21              360           35.50          546.04             1800         35.50
-other_gemm                 27.49              199            8.94          137.45              995          8.94
-layernorm                  11.11              192            3.61           55.53              960          3.61
-softmax                     7.91               72            2.57           39.57              360          2.57
-gelu                        0.00                0            0.00            0.00                0          0.00
-fusion                    125.56             1899           40.82          627.82             9495         40.82
-convert                     0.62               55            0.20            3.09              275          0.20
-cast_transpose             24.26              432            7.89          121.30             2160          7.89
-fmha                        0.00                0            0.00            0.00                0          0.00
-reduce                      0.16               62            0.05            0.78              310          0.05
+Class            TimePerIter(ms)  InstancePerIter  TimePerIter(%)   TotalTime(ms)    TotalInstance  TotalTime(%)
+others                     79.53             1518            1.00          397.67             7590          1.00
+gemm                     6830.11             1363           85.94        34150.57             6815         85.94
+fmha                      555.79              480            6.99         2778.96             2400          6.99
+fusion                    481.73             4516            6.06         2408.65            22580          6.06
 
-NCCL time per iteration: 117.652 (ms)
-NCCL instances per iteration: 533
-NCCL total time: 588.258 (ms)
-NCCL total instances: 2665
+NCCL time per iteration: 3275.659 (ms)
+NCCL instances per iteration: 244
+NCCL total time: 16378.295 (ms)
+NCCL total instances: 1220
 NCCL Statistic:
-Class            TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance  
-AllGather                  63.38              248         316.90             1240
-ReduceScatter              35.34              172         176.70              860
-AllReduce                  18.40              111          92.00              555
-SendRecv                    0.53                2           2.66               10
+Class            TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance
+AllGather                2343.77              161       11718.85              805
+ReduceScatter             924.66               79        4623.31              395
+AllReduce                   7.23                4          36.14               20
 
 Mem Ops Statistic:
-Class                  TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance  
-[CUDA memcpy DtoD]               42.11              163         210.56              815
-[CUDA memset]                     0.69              530           3.45             2650
-[CUDA memcpy DtoH]                0.12               53           0.60              265
-[CUDA memcpy HtoD]                0.01               10           0.06               50
+Class                  TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance
+[CUDA memcpy D2D]                30.66              181         153.28              905
+[CUDA memset]                     8.57             1527          42.85             7635
+[CUDA memcpy H2D]                 0.01                3           0.05               15
 
 NVTX range count: 5
-NVTX average range time: 404.640 (ms)
-NVTX total range time: 2023.200 (ms)
+NVTX average range time: 8578.017 (ms)
+NVTX total range time: 42890.084 (ms)
 
-Estimated non-hidden NCCL, mem ops and bubble time per range: 97.020 (ms)
-Estimated non-hidden NCCL, mem ops and bubble time per range: 23.98 (%)
-Estimated non-hidden NCCL, mem ops and bubble time: 485.099 (ms)
-Estimated non-hidden NCCL, mem ops and bubble time: 23.98 (%)
+Estimated non-hidden NCCL, mem ops and bubble time per range: 630.845 (ms)
+Estimated non-hidden NCCL, mem ops and bubble time per range: 7.35 (%)
+Estimated non-hidden NCCL, mem ops and bubble total time: 3154.224 (ms)
+Estimated non-hidden NCCL, mem ops and bubble total time: 7.35 (%)
+
+
+===== Llama2-70B-From-NSYS-REP =====
+Kernel time per iteration: 7947.172 (ms)
+Kernel instances per iteration: 7877
+Kernel total time: 39735.860 (ms)
+Kernel total instances: 39385
+Kernel Statistic:
+Class            TimePerIter(ms)  InstancePerIter  TimePerIter(%)   TotalTime(ms)    TotalInstance  TotalTime(%)
+others                     79.53             1518            1.00          397.67             7590          1.00
+gemm                     6830.11             1363           85.94        34150.57             6815         85.94
+fmha                      555.79              480            6.99         2778.96             2400          6.99
+fusion                    481.73             4516            6.06         2408.65            22580          6.06
+
+NCCL time per iteration: 3275.659 (ms)
+NCCL instances per iteration: 244
+NCCL total time: 16378.295 (ms)
+NCCL total instances: 1220
+NCCL Statistic:
+Class            TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance
+AllGather                2343.77              161       11718.85              805
+ReduceScatter             924.66               79        4623.31              395
+AllReduce                   7.23                4          36.14               20
+
+Mem Ops Statistic:
+Class                  TimePerIter(ms)  InstancePerIter  TotalTime(ms)    TotalInstance
+[CUDA memcpy D2D]                30.66              181         153.28              905
+[CUDA memset]                     8.57             1527          42.85             7635
+[CUDA memcpy H2D]                 0.01                3           0.05               15
+
+NVTX range count: 5
+NVTX average range time: 8578.017 (ms)
+NVTX total range time: 42890.084 (ms)
+
+Estimated non-hidden NCCL, mem ops and bubble time per range: 630.845 (ms)
+Estimated non-hidden NCCL, mem ops and bubble time per range: 7.35 (%)
+Estimated non-hidden NCCL, mem ops and bubble total time: 3154.224 (ms)
+Estimated non-hidden NCCL, mem ops and bubble total time: 7.35 (%)
 ```
