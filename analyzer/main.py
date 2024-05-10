@@ -51,7 +51,9 @@ def nsys_rep_reader(config):
 
     nsys_path = shutil.which("nsys")
     stats_command = [nsys_path, "stats", "-r", csv_report_types, "--format", "csv", "-o",  output_name, config["path"]]
-    proc = subprocess.Popen(stats_command, stdout=sys.stdout, stderr=sys.stderr)
+    proc = subprocess.Popen(stats_command,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.STDOUT)
     proc.wait()
 
     return csv_reader(csv_reader_config)
