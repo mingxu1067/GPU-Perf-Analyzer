@@ -52,7 +52,7 @@ def nsys_rep_reader(config):
     nsys_path = shutil.which("nsys")
     stats_command = [nsys_path, "stats", "-r", csv_report_types, "--format", "csv", "-o",  output_name, config["path"]]
     proc = subprocess.Popen(stats_command,
-                            stdout=subprocess.DEVNULL,
+                            stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
     proc.wait()
 
@@ -69,8 +69,10 @@ def csv_reader(config):
             return None
 
     kernel_sum_table = read_csv_statistic(config["kernel_sum"])
-    nvtx_proj_trace_table = read_csv_statistic(config["nvtx_proj_trace"])
-    mem_time_sum_table = read_csv_statistic(config["mem_time_sum"])
+    if "nvtx_proj_trace" in config:
+        nvtx_proj_trace_table = read_csv_statistic(config["nvtx_proj_trace"])
+    if "mem_time_sum" in config:
+        mem_time_sum_table = read_csv_statistic(config["mem_time_sum"])
 
     assert kernel_sum_table is not None
     
