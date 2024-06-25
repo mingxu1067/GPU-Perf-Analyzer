@@ -69,10 +69,8 @@ def csv_reader(config):
             return None
 
     kernel_sum_table = read_csv_statistic(config["kernel_sum"])
-    if "nvtx_proj_trace" in config:
-        nvtx_proj_trace_table = read_csv_statistic(config["nvtx_proj_trace"])
-    if "mem_time_sum" in config:
-        mem_time_sum_table = read_csv_statistic(config["mem_time_sum"])
+    nvtx_proj_trace_table = read_csv_statistic(config["nvtx_proj_trace"]) if "nvtx_proj_trace" in config else None
+    mem_time_sum_table = read_csv_statistic(config["mem_time_sum"]) if "mem_time_sum" in config else None
 
     assert kernel_sum_table is not None
     
